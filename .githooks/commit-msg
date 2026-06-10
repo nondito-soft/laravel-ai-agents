@@ -1,0 +1,8 @@
+#!/bin/sh
+# Strip AI assistant co-author trailers from commit messages so they never
+# leak into history or show up as GitHub contributors.
+
+msg_file="$1"
+
+grep -viE '^Co-Authored-By:.*(claude|anthropic|copilot|gpt|openai)' "$msg_file" > "$msg_file.tmp"
+mv "$msg_file.tmp" "$msg_file"
