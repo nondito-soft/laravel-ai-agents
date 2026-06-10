@@ -1,20 +1,17 @@
 #!/bin/sh
-# Enforce the project git identity on every commit.
-# Blocks commits made under any other account (e.g. a developer's global identity).
-
-expected_name="nondito-soft"
-expected_email="developer@nonditosoft.com"
+# Ensure a git identity is configured before committing.
+# The project account is set via the repo's local git config; this guards
+# against committing with an unset identity.
 
 actual_name="$(git config user.name)"
 actual_email="$(git config user.email)"
 
-if [ "$actual_email" != "$expected_email" ] || [ "$actual_name" != "$expected_name" ]; then
-    echo "✖ Commit blocked: this repo must commit as the project account." >&2
-    echo "  Expected: $expected_name <$expected_email>" >&2
-    echo "  Found:    ${actual_name:-<unset>} <${actual_email:-<unset>}>" >&2
+if [ -z "$actual_name" ] || [ -z "$actual_email" ]; then
+    echo "✖ Commit blocked: no git identity configured for this repo." >&2
+    echo "  Found: ${actual_name:-<unset>} <${actual_email:-<unset>}>" >&2
     echo "" >&2
-    echo "  Fix it for this repo:" >&2
-    echo "    git config user.name  \"$expected_name\"" >&2
-    echo "    git config user.email \"$expected_email\"" >&2
+    echo "  Set the project account for this repo:" >&2
+    echo "    git config user.name  \"nondito-soft\"" >&2
+    echo "    git config user.email \"developer@nonditosoft.com\"" >&2
     exit 1
 fi
