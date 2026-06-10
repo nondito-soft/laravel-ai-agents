@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git mv *)",
+      "Bash(grep -nE 'Vue|\\\\$t\\\\\\(' .github/instructions/laravel-lang.instructions.md)",
+      "Bash(git ls-remote *)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git check-ignore *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git branch *)",
+      "Bash(git config *)",
+      "Bash(git checkout *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
