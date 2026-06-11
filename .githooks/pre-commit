@@ -11,7 +11,7 @@ if [ -z "$actual_name" ] || [ -z "$actual_email" ]; then
     echo "  Found: ${actual_name:-<unset>} <${actual_email:-<unset>}>" >&2
     echo "" >&2
     echo "  Set the project account for this repo:" >&2
-    echo "    git config user.name  \"nondito-soft\"" >&2
-    echo "    git config user.email \"developer@nonditosoft.com\"" >&2
+    echo "    git config --local user.name  \"Your Name\"" >&2
+    echo "    git config --local user.email \"you@example.com\"" >&2
     exit 1
 fi
