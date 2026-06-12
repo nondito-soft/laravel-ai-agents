@@ -140,8 +140,26 @@ class {Resource}Service extends BaseModelService
 - Extend `BaseModelService`, implement `model()`
 - Every public method gets a `/** ... */` block comment
 - Wrap multi-step operations in `DB::transaction()`
-- Log activity after state changes: clone → mutate → `$this->logActivity()`
+- Log activity after state changes via the inherited `LogsActivity` trait — **no inline `activity()`**
 - Return model on success, `false` on failure
+
+Activity logging uses the inherited `LogsActivity` trait — **no inline `activity()`**. Each CRUD method calls `logActivity($model, $event, $message, $attributes, $old)` with the message as a string, and the service defines a private `extract{Resource}Properties($model, $event = null)` snapshot helper. Delegate standalone queries/writes on other models to that model's service rather than inlining `OtherModel::...`; relationship reads are fine.
+
+```php
+public function create{Resource}(array $data): {Resource}|false
+{
+    return DB::transaction(function () use ($data) {
+        ${resource} = $this->create($data);
+        $this->logActivity(
+            ${resource},
+            'created',
+            "Created new {resource} - {${resource}->name}",
+            $this->extract{Resource}Properties(${resource}, 'created'),
+        );
+        return ${resource};
+    });
+}
+```
 
 ### Step 4 — FormRequests (`app/Http/Requests/{Resource}/`)
 

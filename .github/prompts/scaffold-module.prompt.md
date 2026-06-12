@@ -9,7 +9,7 @@ Use the `scaffolder` agent workflow. Read `AGENTS.md` and all `.github/instructi
 
 1. Migration with `is_active`, `created_by`, `updated_by`, `timestamps()`, `softDeletes()`
 2. Model with `$fillable` and `SoftDeletes`
-3. Service extending `BaseModelService`
+3. Service extending `BaseModelService` (activity logging via the inherited `LogsActivity` trait — `logActivity(...)` with the message as a string, no inline `activity()`; query only this module's model)
 4. Create + Update FormRequests
 5. Controller with `HasMiddleware` and permission middleware
 6. Routes in `web.php` auth group
