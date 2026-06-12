@@ -143,7 +143,7 @@ class {Resource}Service extends BaseModelService
 - Log activity after state changes via the inherited `LogsActivity` trait — **no inline `activity()`**
 - Return model on success, `false` on failure
 
-Activity logging uses the inherited `LogsActivity` trait — **no inline `activity()`**. Each CRUD method calls `logActivity($model, $event, $message, $attributes, $old)` with the message as a string, and the service defines a private `extract{Resource}Properties($model, $event = null)` snapshot helper. Do not query any model other than `{Resource}` here — delegate foreign-model access to that model's service.
+Activity logging uses the inherited `LogsActivity` trait — **no inline `activity()`**. Each CRUD method calls `logActivity($model, $event, $message, $attributes, $old)` with the message as a string, and the service defines a private `extract{Resource}Properties($model, $event = null)` snapshot helper. Delegate standalone queries/writes on other models to that model's service rather than inlining `OtherModel::...`; relationship reads are fine.
 
 ```php
 public function create{Resource}(array $data): {Resource}|false

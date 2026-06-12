@@ -8,7 +8,7 @@ Review all staged/uncommitted changes against project conventions.
 1. Run `git diff --name-only` to get changed files.
 2. For each changed file, apply the relevant checks from `.github/agents/pr-reviewer.agent.md`:
    - Architecture compliance (service layer, `HasMiddleware`, route model binding)
-   - Service conventions (model-backed services extend `BaseModelService`; orchestration services don't; no cross-model queries — delegate to the model's own service)
+   - Service conventions (model-backed services extend `BaseModelService`; orchestration services don't; delegate standalone foreign-model queries/writes to that model's service — relationship reads are fine)
    - Naming conventions (permissions, routes, translations)
    - Missing artifacts (new module → check all 10 artifacts exist)
    - Security (no `dd()`, no `$guarded = []`, no raw SQL, no `$_ENV`)

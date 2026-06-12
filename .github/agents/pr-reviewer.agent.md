@@ -47,7 +47,7 @@ For each changed file, apply the relevant checks below.
 
 - [ ] **Business logic in services** — no DB queries, loops over models, or complex conditionals in controllers
 - [ ] **Model-backed service extends BaseModelService** — implements `model(): string`; orchestration/helper services (no table) do NOT extend it
-- [ ] **No cross-model queries in a service** — access to another model's table is delegated to that model's service, not inlined
+- [ ] **Foreign-model access delegated** — an orchestration/helper service (no table) delegates standalone foreign-model queries/writes to that model's service rather than inlining `OtherModel::where/create/withTrashed`; reading through an Eloquent relationship you already hold is fine
 - [ ] **Activity logging via the `LogsActivity` trait only** — no inline `activity()` in `app/Services/**`; `logActivity(...)` (message as string) for resource ops, `logOperation(...)` for subject-less system ops
 - [ ] **Controller implements HasMiddleware** — defines `middleware()` with permission checks
 - [ ] **Route model binding** — controllers use `User $user`, not `$id`
