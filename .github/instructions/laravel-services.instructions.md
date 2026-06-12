@@ -6,11 +6,28 @@ applyTo: "app/Services/**/*.php"
 # Laravel Services
 
 ## Structure
-- Every service extends `BaseModelService` and implements `model(): string`
+- A service that persists or operates on a model's table extends `BaseModelService` and implements `model(): string` — one such service per model (UserService, RoleService, ConfigurationService, …)
+- A service that does no table CRUD (auth/token, orchestration, helpers — e.g. `AuthService`, `SocialAuthService`, `HelperService`) does NOT extend `BaseModelService`. If it needs to log activity, it `use`s the `App\Concerns\LogsActivity` trait directly (see Activity Logging)
 - Inject dependencies via constructor (not `new` inside methods)
 - Use `DB::transaction()` for multi-step operations
 - Every public method must have a `/** ... */` block comment describing what it does
-- This pattern applies equally to all resources
+- The BaseModelService pattern applies equally to all model-backed resources
+
+## Cross-Service Data Access
+- Persistence/finders for a model live on its model-backed service: generic CRUD comes from `BaseModelService` (`create`, `update`, `delete`, `find`, `findOrFail`, `first`, `all`, `restore`, `forceDelete`); model-specific lookups are named methods on the service (e.g. `findByProviderIdentity`, `existsByEmailWithTrashed`, `getForUser`).
+- An orchestration service that owns no table (e.g. `SocialAuthService`) injects the model services it needs and delegates standalone queries/writes to them — rather than running `OtherModel::where(...)`, `OtherModel::create(...)`, or `OtherModel::withTrashed()` inline. (Reading through an Eloquent relationship you already hold is fine.)
+
+```php
+// SocialAuthService orchestrates; it owns no table.
+public function __construct(
+    protected SocialAccountService $socialAccountService,
+    protected UserService $userService,
+) {}
+
+// delegate — never query SocialAccount/User directly here
+$account = $this->socialAccountService->findByProviderIdentity($provider, $id);
+$user    = $this->userService->create($data);
+```
 
 ```php
 class {Resource}Service extends BaseModelService
@@ -27,7 +44,12 @@ class {Resource}Service extends BaseModelService
     {
         return DB::transaction(function () use ($data) {
             $resource = $this->create($data); // injects created_by, updated_by
-            $this->logActivity($resource, 'created', '{resource}.created');
+            $this->logActivity(
+                $resource,
+                'created',
+                "Created new {resource} - {$resource->name}",
+                $this->extract{Resource}Properties($resource, 'created'),
+            );
             return $resource;
         });
     }
@@ -87,13 +109,37 @@ public function changeStatus(User $user) { ... }
 - Do not throw exceptions for expected failures
 
 ## Activity Logging
-- Log manually — never use model observers
-- Pattern: clone before → make change → log with old state
+- Log manually — never use model observers.
+- **All** activity-log emission goes through the `App\Concerns\LogsActivity` trait. There must be **no inline `activity()` call** anywhere in `app/Services/**` — model services inherit the trait via `BaseModelService`; non-model services `use LogsActivity` directly.
+- The trait exposes two methods:
+  - `logActivity(Model $model, string $event, string $message, array $attributes = [], array $old = [])` — for resource operations on a model. `$attributes` is the new-state snapshot (create/update); `$old` is the previous snapshot (update/delete). Empty arrays are dropped from the stored `properties`.
+  - `logOperation(string $message)` — for subject-less system operations with no model and no properties (e.g. cache clear, session flush); logs under `event('operation')`.
+- The **message is passed as a string at the call site** — do not reintroduce a `$log`-key + `$messageList` indirection inside the service.
+- Each service keeps a private `extract{Resource}Properties($model, $event = null)` helper that returns the snapshot array; pass its result as `$attributes` / `$old`. The `$event === 'created'` branch forces default flags (see existing services).
+- Pattern: clone before → make change → log with old + new snapshots.
 
 ```php
-$old = clone $user;
+// Resource operation (update): pass new + old snapshots, message as a string.
+$oldUser = clone $user;
 $user->update($data);
-$this->logActivity($user, 'updated', 'user.updated', $old);
+$this->logActivity(
+    $user,
+    'updated',
+    "Updated the user - {$user->name}",
+    $this->extractUserProperties($user, 'updated'),
+    $this->extractUserProperties($oldUser),
+);
+
+// Delete: only the old snapshot is meaningful (named arg skips $attributes).
+$this->logActivity(
+    $user,
+    'deleted',
+    "Deleted the user - {$user->name}",
+    old: $this->extractUserProperties($oldUser),
+);
+
+// Subject-less system operation: no model, no properties.
+$this->logOperation('Cleared application cache');
 ```
 
 

@@ -81,6 +81,24 @@ class {Resource} extends Model
 
 Extend `BaseModelService`, implement `model()`, add CRUD methods with `DB::transaction()` and activity logging.
 
+Activity logging uses the inherited `LogsActivity` trait — **no inline `activity()`**. Each CRUD method calls `logActivity($model, $event, $message, $attributes, $old)` with the message as a string, and the service defines a private `extract{Resource}Properties($model, $event = null)` snapshot helper. Do not query any model other than `{Resource}` here — delegate foreign-model access to that model's service.
+
+```php
+public function create{Resource}(array $data): {Resource}|false
+{
+    return DB::transaction(function () use ($data) {
+        ${resource} = $this->create($data);
+        $this->logActivity(
+            ${resource},
+            'created',
+            "Created new {resource} - {${resource}->name}",
+            $this->extract{Resource}Properties(${resource}, 'created'),
+        );
+        return ${resource};
+    });
+}
+```
+
 ### Step 4 — FormRequests
 
 - `app/Http/Requests/{Resource}/{Resource}CreateRequest.php`

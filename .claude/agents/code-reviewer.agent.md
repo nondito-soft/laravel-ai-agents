@@ -37,10 +37,10 @@ Scan the relevant parts of the codebase to understand the current patterns befor
 - [ ] Page titles use `__('pageTitle.custom.resource.action')` translation keys
 
 #### Services (`app/Services/`)
-- [ ] Extends `BaseModelService` and implements `model(): string`
+- [ ] A model-backed service extends `BaseModelService` and implements `model(): string`; an orchestration/helper service with no table does NOT extend it (flag a `BaseModelService` subclass whose `model()` is fake/unused)
 - [ ] Multi-step operations wrapped in `DB::transaction()`
 - [ ] Returns model on success, `false` on failure — not exceptions for expected failures
-- [ ] Activity logging is manual: clone → mutate → `$this->logActivity()` — no observers
+- [ ] **Activity logging goes through the `LogsActivity` trait only** — flag any inline `activity()` in `app/Services/**`. Resource ops call `logActivity($model, $event, $message, $attributes, $old)` with the message as a string (no `$log`-key/`$messageList` indirection); subject-less system ops call `logOperation($message)`. Non-model services must `use LogsActivity`
 - [ ] Dependencies injected via constructor — never instantiated with `new`
 - [ ] `ConfigurationService` uses `where()->update()` — not `foreach + save()`
 
@@ -105,7 +105,7 @@ Scan the relevant parts of the codebase to understand the current patterns befor
 
 ---
 
-## Output Format
+## 4. Output Format
 
 Present findings in three severity tiers:
 
@@ -126,7 +126,7 @@ For each issue:
 
 ---
 
-## After Review
+## 5. After Review
 
 After presenting findings, offer to apply fixes automatically. Group fixes by file and apply them using the edit tools. Run `./vendor/bin/pint` on modified PHP files after applying fixes.
 
